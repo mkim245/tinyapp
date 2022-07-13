@@ -46,8 +46,6 @@ app.get("/urls/:id", (req, res) => {
   res.render("urls_show", templateVars);
 });
 
-
-
 app.post("/urls/:id", (req, res) => {
   urlDatabase[req.params.id] = req.body.longURL;
 });
@@ -61,6 +59,15 @@ app.get("/u/:id", (req, res) => {
   const longURL = urlDatabase[req.params.id];
   res.redirect(longURL);
 });
+
+app.get("/register", (req, res) => {
+  const templateVars = { 
+    email: req.body.email,
+    password: req.body.password,
+    username: req.body.username
+  };
+  res.render("urls_register", templateVars);
+})
 
 app.post("/urls/:id/edit", (req, res) => {
   res.redirect("/urls/" + req.params.id);
@@ -82,7 +89,14 @@ app.post("/logout", (req, res) => {
   res.redirect("/urls");
 });
 
-  
+app.post("/register", (req, res) => {
+  // const newEmail = req.body.email;
+  // const newPassword = req.body.password;
+
+  res.redirect("/register");
+});
+
+
 app.get("/hello", (req, res) => {
   res.send("<html><body>Hello <b>World</b></body></html>\n");
 });
