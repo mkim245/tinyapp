@@ -6,21 +6,22 @@
       <span class="navbar-toggler-icon"></span>
     </button>
     <div class="collapse navbar-collapse" id="navbarNavAltMarkup">
-      <% if(username){ %>
+      <% if(user){ %>
         <div class="navbar-nav ml-auto">
           <a class="nav-item nav-link" href="/urls">My URLs</a>
           <a class="nav-item nav-link" href="/urls/new">Create New URL</a>
-          <a class="nav-item nav-link">
-            <%= username %>
+          <!-- <a class="nav-item nav-link"> -->
+            <label>Logged In As: <%= user.email %></label>
               <form method="POST" action="/logout">
                 <button type="submit" class="btn btn-outline-danger">Logout</button>
-              </a>
+              </form>
+              <!-- </a> -->
             </div>
             <% } else{ %>
               <div class="navbar-nav ml-auto">
                 <a class="nav-item nav-link" href="/urls">My URLs</a>
                 <a class="nav-item nav-link" href="/urls/new">Create New URL</a>
-                <form method="POST" action="/login">
+                <form method="GET" action="/login">
                   <input name="username" placeholder="Username" type="text" />
                   <button type="submit" class="btn btn-outline-danger">Login</button>
                 </form>
