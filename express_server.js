@@ -7,10 +7,23 @@ const PORT = 8080; // default port 8080
 
 app.set("view engine", "ejs");
 
+// const urlDatabase = {
+//   "b2xVn2": "http://www.lighthouselabs.ca",
+//   "9sm5xK": "http://www.google.com"
+// };
+
 const urlDatabase = {
-  "b2xVn2": "http://www.lighthouselabs.ca",
-  "9sm5xK": "http://www.google.com"
-};
+  b6UTxQ: {
+    longURL: "https://www.tsn.ca",
+    userID: "aJ48lW",
+  },
+  i3BoGr: {
+    longURL: "https://www.google.ca",
+    userID: "aJ48lW",
+  },
+}
+
+
 const users = {};
 
 const getUserByID = function (userID) {
@@ -36,6 +49,18 @@ const userIdFromEmail = function(email, users) {
     }
   }
 };
+
+const urlsForUser = function (id, urlDatabase) {
+  const userUrls = {};
+  for (let shortURL in urlDatabase) {
+    if (urlDatabase[shortURL].userID === id) {
+      userUrls[shortURL] = urlDatabase[shortURL];
+    }
+  }
+  return userUrls;
+}
+
+
 app.use(express.urlencoded({ extended: true })); // parse incoming body (POST/PUT)
 app.use(cookieParser()); //Parser cookie values, always triggered
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -43,13 +68,21 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.get("/urls", (req, res) => {
   const user = getUserByID(req.cookies["user_id"]);
   const templateVars = {
-    urls: urlDatabase,
+    // urls: urlDatabase,
+    urls: urlsForUser(user.id, urlDatabase),
     user: user
   };
+  if (!user) {
+    return res.redirect("/login");
+  }
   res.render("urls_index", templateVars);
 });
 
 app.get("/urls/new", (req, res) => {
+  const {user_id} = req.cookies;
+  if (!user_id) {
+    return res.redirect("/login");
+  }
   const user = getUserByID(req.cookies["user_id"]);
   const templateVars = {
     user: user
@@ -57,28 +90,66 @@ app.get("/urls/new", (req, res) => {
   res.render("urls_new", templateVars);
 });
 
-app.get("/urls/:id", (req, res) => {
+app.get("/urls/:shortURL", (req, res) => {
   const user = getUserByID(req.cookies["user_id"]);
   const templateVars = {
-    id: req.params.id,
-    longURL: urlDatabase[req.params.id],
+    shortURL: req.params.shortURL,
+    longURL: urlDatabase[req.params.shortURL].longURL,
+    urlUserID: urlDatabase[req.params.shortURL].userID,
     user: user
   };
+ 
+  if (!user) {
+   return res.redirect("/login");
+  }
   res.render("urls_show", templateVars);
 });
 
-app.post("/urls/:id", (req, res) => {
-  urlDatabase[req.params.id] = req.body.longURL;
+// app.post("/urls/:id", (req, res) => {
+//   const {user_id} = req.cookies;
+//   if (!user_id) {
+//     return res.status(400).send("Please create new account or login");
+//   }
+//   urlDatabase[req.params.id].longUrl = req.body.longURL;
+//   res.redirect("/urls");
+// });
+
+app.post("/urls/:shortURL", (req, res) => {
+  const {user_id} = req.cookies;
+  // const userUrls = urlsForUser(user_id, urlDatabase);
+  if (!user_id) {
+    return res.status(400).send("Please create new account or login");
+  }
+  urlDatabase[req.params.shortURL].longURL = req.body.longURL;
+  console.log(urlDatabase);
+  res.redirect("/urls");
 });
+
+
 
 app.post("/urls", (req, res) => {
-  console.log(req.body); // Log the POST request body to the console
-  res.send("Ok"); // Respond with 'Ok' (we will replace this)
+  const {user_id} = req.cookies;
+  if (!user_id) {
+    res.status(400).send("Please create new account or login");
+  }
+  const shortURL = randomString.generate(6);
+  urlDatabase[shortURL] = {
+    longURL: req.body.longURL,
+    userID: req.cookies.user_id,
+  };
+  res.redirect(`/urls/${shortURL}`);
 });
 
-app.get("/u/:id", (req, res) => {
-  const longURL = urlDatabase[req.params.id];
+app.get("/u/:shortURL", (req, res) => {
+  const longURL = urlDatabase[req.params.shortURL].longURL;
   res.redirect(longURL);
+});
+
+app.post("/u/:shortURL", (req, res) => {
+const {user_id} = req.cookies;
+if (!user_id) {
+  res.status(400).send("Please create new account or login")
+}
 });
 
 app.get("/register", (req, res) => {
@@ -98,21 +169,27 @@ app.get("/login", (req, res) => {
   res.render("urls_login", templateVars);
 })
 
-app.post("/urls/:id/edit", (req, res) => {
-  res.redirect("/urls/" + req.params.id);
+
+app.post("/urls/:shortURL/edit", (req, res) => {
+  res.redirect("/urls/" + req.params.shortURL);
 });
 
-app.post("/urls/:id/delete", (req, res) => {
-  delete urlDatabase[req.params.id];
+app.post("/urls/:shortURL/delete", (req, res) => {
+  const {user_id} = req.cookies;
+  if (!user_id && (urlDatabase[req.params.shortURL].user_id === user_id )) {
+    return res.status(401).send("You are not authorized to delete this short URL.");
+  } else {
+  delete urlDatabase[req.params.shortURL];
   res.redirect("/urls");
+  }
 });
 
 app.post("/login", (req, res) => {
   // console.log(req.body.username);
   // res.cookie("username", req.body.username);
-  console.log(users);
+  // console.log(users);
   const email = req.body.email;
-  console.log(email);
+  // console.log(email);
   const password = req.body.password;
   const userID = userIdFromEmail(email, users);
   const foundUser = getUserByEmail(email, users);
