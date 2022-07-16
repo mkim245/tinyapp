@@ -11,21 +11,22 @@
           <a class="nav-item nav-link" href="/urls">My URLs</a>
           <a class="nav-item nav-link" href="/urls/new">Create New URL</a>
           <!-- <a class="nav-item nav-link"> -->
-            <label>Logged In As: <%= user.email %></label>
-              <form method="POST" action="/logout">
-                <button type="submit" class="btn btn-outline-danger">Logout</button>
-              </form>
-              <!-- </a> -->
-            </div>
-            <% } else{ %>
-              <div class="navbar-nav ml-auto">
-                <a class="nav-item nav-link" href="/urls">My URLs</a>
-                <a class="nav-item nav-link" href="/urls/new">Create New URL</a>
-                <form method="GET" action="/login">
-                  <button type="submit" class="btn btn-outline-danger">Login</button>
-                </form>
-                <form method="GET" action="/register"> <button type="submit" class="btn btn-outline-danger">Register</button>
-                </form>
+          <label>Logged In As: <%= user.email %></label>
+          <form method="POST" action="/logout">
+            <button type="submit" class="btn btn-outline-danger">Logout</button>
+          </form>
+          <!-- </a> -->
+        </div>
+        <% } else{ %>
+          <div class="navbar-nav ml-auto">
+            <a class="nav-item nav-link" href="/urls">My URLs</a>
+            <a class="nav-item nav-link" href="/urls/new">Create New URL</a>
+            <form method="GET" action="/login">
+              <button type="submit" class="btn btn-outline-danger">Login</button>
+            </form>
+            <form method="GET" action="/register"> <button type="submit"
+                class="btn btn-outline-danger">Register</button>
+            </form>
 
           </div>
           <% } %>
