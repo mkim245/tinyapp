@@ -30,6 +30,15 @@ app.use(cookieSession({
 app.use(express.urlencoded({ extended: true }));
 app.use(bodyParser.urlencoded({ extended: true }));
 
+// GET routes below
+app.get("/", (req, res) => {
+  if (getUserByID(req.session.user_id, users)) {
+    return res.redirect("/urls");
+  } else {
+    res.redirect("/login");
+  }
+});
+
 app.get("/urls", (req, res) => {
   const user = getUserByID(req.session.user_id, users);
   const templateVars = {
@@ -37,7 +46,7 @@ app.get("/urls", (req, res) => {
     user: user
   };
   if (!user) {
-    return res.redirect("/login");
+    return res.status(401).send("You are not authorized to view the URL."); 
   }
   res.render("urls_index", templateVars);
 });
@@ -55,21 +64,36 @@ app.get("/urls/new", (req, res) => {
 
 app.get("/urls/:shortURL", (req, res) => {
   const user = getUserByID(req.session.user_id, users);
-  const templateVars = {
-    shortURL: req.params.shortURL,
-    longURL: urlDatabase[req.params.shortURL].longURL,
-    urlUserID: urlDatabase[req.params.shortURL].userID,
-    user: user
-  };
-  if (!user) {
-    return res.redirect("/login");
-  }
-  res.render("urls_show", templateVars);
+    if (!user || urlDatabase[req.params.shortURL].userID !== user.id) {
+      return res.status(401).send("You are not authorized to view the URL."); 
+    }
+    if (!urlDatabase[req.params.shortURL]) {
+      return res.status(404).send("The URL can't be found.")
+    }
+    const templateVars = {
+      shortURL: req.params.shortURL,
+      longURL: urlDatabase[req.params.shortURL].longURL,
+      urlUserID: urlDatabase[req.params.shortURL].userID,
+      user: user
+    };
+    res.render("urls_show", templateVars);
 });
 
 app.get("/u/:shortURL", (req, res) => {
+  if (!urlDatabase[req.params.shortURL]) {
+    return res.status(404).send("The URL can't be found.");
+  }
   const longURL = urlDatabase[req.params.shortURL].longURL;
   res.redirect(longURL);
+});
+
+
+app.get("/login", (req, res) => {
+  const user = getUserByID(req.session.user_id, users);
+  const templateVars = {
+    user: user
+  };
+  res.render("urls_login", templateVars);
 });
 
 app.get("/register", (req, res) => {
@@ -80,20 +104,12 @@ app.get("/register", (req, res) => {
   res.render("urls_register", templateVars);
 });
 
-app.get("/login", (req, res) => {
-  const user = getUserByID(req.session.user_id, users);
-  const templateVars = {
-    user: user
-  };
-  res.render("urls_login", templateVars);
-});
-
+// POST routes below
 app.post("/urls/:shortURL", (req, res) => {
   if (!req.session.user_id) {
     return res.status(400).send("Please create new account or login");
   }
   urlDatabase[req.params.shortURL].longURL = req.body.longURL;
-  console.log(urlDatabase);
   res.redirect("/urls");
 });
 
@@ -121,10 +137,8 @@ app.post("/urls/:shortURL/edit", (req, res) => {
 
 app.post("/urls/:shortURL/delete", (req, res) => {
   if (urlDatabase[req.params.shortURL].user_id === req.session.user_id) {
-    console.log("inside");
     return res.status(401).send("You are not authorized to delete this short URL.");
   } else {
-    console.log("outside");
     delete urlDatabase[req.params.shortURL];
     res.redirect("/urls");
   }
@@ -148,7 +162,7 @@ app.post("/login", (req, res) => {
 
 app.post("/logout", (req, res) => {
   req.session = null;
-  res.redirect("/urls");
+  res.redirect("/login");
 });
 
 app.post("/register", (req, res) => {
@@ -157,7 +171,7 @@ app.post("/register", (req, res) => {
   if (!newEmail || !newPassword) {
     res.status(400).send("Please enter both a valid email and password");
   } else if (getUserByEmail(newEmail, users)) {
-    res.status(400).send("An account already existes for the same email address");
+    res.status(400).send("An account already exists for the same email address");
   } else {
     const newUserID = randomString.generate(5);
     users[newUserID] = {
